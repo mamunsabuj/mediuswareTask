@@ -8,14 +8,17 @@
 
 
     <div class="card">
-        <form action="" method="get" class="card-header">
+        <form action="{{ route('product.index') }}" method="get" class="card-header">
             <div class="form-row justify-content-between">
                 <div class="col-md-2">
-                    <input type="text" name="title" placeholder="Product Title" class="form-control">
+                    <input type="text" name="title" placeholder="Product Title" class="form-control" value="{{ request()->get('title')??null }}">
                 </div>
                 <div class="col-md-2">
                     <select name="variant" id="" class="form-control">
-
+                        <option value="">Select A Variant</option>
+                        @foreach($variants as $variant)
+                            <option value="{{ $variant->id }}" disabled>{{ $variant->title }}</option>
+                        @endforeach
                     </select>
                 </div>
 
@@ -24,12 +27,12 @@
                         <div class="input-group-prepend">
                             <span class="input-group-text">Price Range</span>
                         </div>
-                        <input type="text" name="price_from" aria-label="First name" placeholder="From" class="form-control">
-                        <input type="text" name="price_to" aria-label="Last name" placeholder="To" class="form-control">
+                        <input type="text" name="price_from" aria-label="First name" placeholder="From" class="form-control"  value="{{ request()->get('price_from')??null }}">
+                        <input type="text" name="price_to" aria-label="Last name" placeholder="To" class="form-control" value="{{ request()->get('price_to')??null }}">
                     </div>
                 </div>
                 <div class="col-md-2">
-                    <input type="date" name="date" placeholder="Date" class="form-control">
+                    <input type="date" name="date" placeholder="Date" class="form-control"  value="{{ request()->get('date')??null }}">
                 </div>
                 <div class="col-md-1">
                     <button type="submit" class="btn btn-primary float-right"><i class="fa fa-search"></i></button>
@@ -51,32 +54,44 @@
                     </thead>
 
                     <tbody>
+                    @forelse ($products as $product)
+                        <tr>
+                            <td>{{ $loop->index+1 }}</td>
+                            <td>{{ $product->title }} <br> Created at : {{ date('d-M-Y', strtotime($product->created_at)) }}</td>
+                            <td>{{ $product->description }}</td>
+                            <td>
+                                <dl class="row mb-0" style="height: 80px; overflow: hidden" id="variant">
 
-                    <tr>
-                        <td>1</td>
-                        <td>T-Shirt <br> Created at : 25-Aug-2020</td>
-                        <td>Quality product in low cost</td>
-                        <td>
-                            <dl class="row mb-0" style="height: 80px; overflow: hidden" id="variant">
+                                    @forelse($product->productVariantPrice as $price)
+                                    <dt class="col-sm-3 pb-0">
+                                        {{ $price->product_variant_one }}/ {{ $price->product_variant_two }} / {{ $price->product_variant_three }}
+                                    </dt>
+                                    <dd class="col-sm-9">
+                                        <dl class="row mb-0">
+                                            <dt class="col-sm-4 pb-0">Price : {{ number_format($price->price,2) }}</dt>
+                                            <dd class="col-sm-8 pb-0">InStock : {{ number_format($price->stock,2) }}</dd>
+                                        </dl>
+                                    </dd>
+                                    @empty
+                                    <dt class="col-sm-3 pb-0">
+                                        No variant
+                                    </dt>
+                                    @endforelse
+                                </dl>
+                                <button onclick="$('#variant').toggleClass('h-auto')" class="btn btn-sm btn-link">Show more</button>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ route('product.edit', 1) }}" class="btn btn-success">Edit</a>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5">No Data Found!</td>
+                        </tr>
+                    @endforelse
 
-                                <dt class="col-sm-3 pb-0">
-                                    SM/ Red/ V-Nick
-                                </dt>
-                                <dd class="col-sm-9">
-                                    <dl class="row mb-0">
-                                        <dt class="col-sm-4 pb-0">Price : {{ number_format(200,2) }}</dt>
-                                        <dd class="col-sm-8 pb-0">InStock : {{ number_format(50,2) }}</dd>
-                                    </dl>
-                                </dd>
-                            </dl>
-                            <button onclick="$('#variant').toggleClass('h-auto')" class="btn btn-sm btn-link">Show more</button>
-                        </td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <a href="{{ route('product.edit', 1) }}" class="btn btn-success">Edit</a>
-                            </div>
-                        </td>
-                    </tr>
 
                     </tbody>
 
@@ -87,11 +102,8 @@
 
         <div class="card-footer">
             <div class="row justify-content-between">
-                <div class="col-md-6">
-                    <p>Showing 1 to 10 out of 100</p>
-                </div>
-                <div class="col-md-2">
-
+                <div class="col-md-12">
+                    {{ $products->withQueryString()->links() }}
                 </div>
             </div>
         </div>
