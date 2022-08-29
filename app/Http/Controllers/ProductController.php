@@ -22,7 +22,7 @@ class ProductController extends Controller
     {
         $products = Product::with([
             'productVariant' => function($q)  use($request){
-                 $q->where('variant', $request->get('variant'));
+                return $q->where('variant', $request->get('variant'));
             },
             'productVariantPrice' => function($q) use($request){
                     return $q->when(($request->get('price_from') && $request->get('price_to')), function($q) use($request) {
@@ -162,7 +162,17 @@ class ProductController extends Controller
     public function edit(Product $product)
     {
         $variants = Variant::all();
-        $product->load('productVariant.variantType');
+        $product->load(['productVariant.variantType','productVariantPrice']);
+
+        $product->variants = collect($product->productVariant)
+         ->groupBy('variantType.title')
+         ->map(function($item){
+                return  [
+                    'option' => $item->first()->variantType->id,
+                    'tags' => $item->pluck('variant'),
+                    'tagsWithId' => $item->pluck('variant','id')
+                ];
+            })->values();
 
         return view('products.edit', compact('product',  'variants'));
     }
@@ -198,11 +208,12 @@ class ProductController extends Controller
        ->map(function($item){
 
                 return  [
-                    'option' => $item->first()->id,
-                    'tags' => $item->pluck('variant','id')
+                    'option' => $item->first()->variantType->id,
+                    'tags' => $item->pluck('variant'),
+                    'tagsWithId' => $item->pluck('variant','id')
                 ];
-            })->flatten(1);
-        ;
+            })->values();
+
         return response()->json($variants);
     }
 }

@@ -5,7 +5,6 @@
         <h1 class="h3 mb-0 text-gray-800">Edit Product</h1>
     </div>
     <div id="app">
-        {{-- @php dump($productVariantList); @endphp --}}
         <create-product :product="{{ $product }}"  :variants="{{ $variants }}">Loading</create-product>
     </div>
 @endsection

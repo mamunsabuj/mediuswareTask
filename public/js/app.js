@@ -2130,29 +2130,14 @@ __webpack_require__.r(__webpack_exports__);
         this.product_name = this.product.title;
         this.product_sku = this.product.sku;
         this.description = this.product.description;
-        axios.get("/getProductVariant/".concat(this.product.id)).then(function (response) {
-          if (response.data) {
-            var variants = response.data;
-            console.log(variants.Color);
-            variants.map(function (item) {
-              _this2.product_variant.push({
-                option: item.option,
-                tags: item.tags
-              });
-            });
-          }
-        })["catch"](function (error) {
-          console.log(error);
-        }); // console.log(this.productVariantList);
-        // if(this.product.productVariantList){
-        //     this.product_variant = [];
-        //     this.product.productVariantList.forEach(item => {
-        //         this.product_variant.push({
-        //             option: item.option,
-        //             tags: item.tags
-        //         })
-        //     });
-        // }
+        this.product_variant = [];
+        this.product.variants.map(function (item) {
+          _this2.product_variant.push({
+            option: item.option,
+            tags: item.tags
+          });
+        });
+        this.checkVariant();
       }
     }
   },

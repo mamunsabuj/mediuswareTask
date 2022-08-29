@@ -215,37 +215,15 @@ export default {
                 this.product_sku =  this.product.sku;
                 this.description =  this.product.description;
 
-            axios.get(`/getProductVariant/${this.product.id}`).then(response => {
-                if(response.data){
+                this.product_variant = [];
+                this.product.variants.map(item => {
+                    this.product_variant.push({
+                        option: item.option,
+                        tags: item.tags
+                    })
+                });
 
-                    var variants = response.data;
-                    console.log( variants.Color);
-                    variants.map(item => {
-                        this.product_variant.push({
-                            option: item.option,
-                            tags: item.tags
-                        })
-                    });
-
-                }
-            }).catch(error => {
-                console.log(error);
-            })
-
-                // console.log(this.productVariantList);
-
-
-                // if(this.product.productVariantList){
-                //     this.product_variant = [];
-
-                //     this.product.productVariantList.forEach(item => {
-                //         this.product_variant.push({
-                //             option: item.option,
-                //             tags: item.tags
-                //         })
-                //     });
-
-                // }
+                this.checkVariant();
             }
         }
 
