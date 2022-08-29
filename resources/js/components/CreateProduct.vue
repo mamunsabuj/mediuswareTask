@@ -115,10 +115,7 @@ export default {
             type: Object,
             required: false
         },
-        productVariantList:{
-            type: Object,
-            required: false
-        }
+
     },
     data() {
         return {
@@ -217,6 +214,25 @@ export default {
                 this.product_name =  this.product.title;
                 this.product_sku =  this.product.sku;
                 this.description =  this.product.description;
+
+            axios.get(`/getProductVariant/${this.product.id}`).then(response => {
+                if(response.data){
+
+                    var variants = response.data;
+                    console.log( variants.Color);
+                    variants.map(item => {
+                        this.product_variant.push({
+                            option: item.option,
+                            tags: item.tags
+                        })
+                    });
+
+                }
+            }).catch(error => {
+                console.log(error);
+            })
+
+                // console.log(this.productVariantList);
 
 
                 // if(this.product.productVariantList){

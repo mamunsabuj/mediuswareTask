@@ -71,10 +71,6 @@ class ProductController extends Controller
 
 
         try {
-            // $this->validate($request, [
-            //     'product_name' => 'required',
-            //     'product_sku' => 'required|unique:products.sku'
-            // ]);
 
             $product = new Product();
             $product->fill($request->all());
@@ -97,7 +93,6 @@ class ProductController extends Controller
                     })->pluck('variant','id');
                 });
 
-                // return ($product_variants);
 
                 if($request->get('product_variant_prices')){
 
@@ -120,9 +115,7 @@ class ProductController extends Controller
                     });
                 }
 
-
             }
-
 
             $response = [
                 'message' => $product,
@@ -170,27 +163,8 @@ class ProductController extends Controller
     {
         $variants = Variant::all();
         $product->load('productVariant.variantType');
-        // return $product;
 
-        $productVariantList = $product->productVariantList = collect($product->productVariant)
-            ->groupBy('variantType.title')
-            ->map(function($item){
-
-               $tags = collect($item)->map(function($val){
-                    return [
-                        'id' => $val->id,
-                        'variant' => $val->variant
-                    ];
-                })->pluck('variant','id');
-
-                return [
-                    'option' => $item[0]->variantType->id,
-                    'tags' => $tags,
-                    'tagsWithID' => $tags,
-                ];
-
-            });
-        return view('products.edit', compact('product','productVariantList','variants'));
+        return view('products.edit', compact('product',  'variants'));
     }
 
     /**
@@ -214,5 +188,21 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         //
+    }
+
+    public function getProductVariant($id)
+    {
+
+       $variants = ProductVariant::with('variantType')->where('product_id', $id)->get()
+       ->groupBy('variantType.title')
+       ->map(function($item){
+
+                return  [
+                    'option' => $item->first()->id,
+                    'tags' => $item->pluck('variant','id')
+                ];
+            })->flatten(1);
+        ;
+        return response()->json($variants);
     }
 }
