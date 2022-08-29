@@ -110,10 +110,19 @@ export default {
         variants: {
             type: Array,
             required: true
+        },
+        product:{
+            type: Object,
+            required: false
+        },
+        productVariantList:{
+            type: Object,
+            required: false
         }
     },
     data() {
         return {
+            id: '',
             product_name: '',
             product_sku: '',
             description: '',
@@ -133,6 +142,7 @@ export default {
             }
         }
     },
+
     methods: {
         // it will push a new object into product variant
         newVariant() {
@@ -179,6 +189,8 @@ export default {
 
         // store product into database
         saveProduct() {
+
+
             let product = {
                 title: this.product_name,
                 sku: this.product_sku,
@@ -188,20 +200,44 @@ export default {
                 product_variant_prices: this.product_variant_prices
             }
 
-
             axios.post('/product', product).then(response => {
-                console.log(response.data);
+                if(response.data.status == 200){
+                    console.log('success');
+                    window.location.href="/product";
+                }
             }).catch(error => {
                 console.log(error);
             })
 
-            console.log(product);
+        },
+
+        getProductInfo(){
+            if(this.product){
+                let product = this.product;
+                this.product_name =  this.product.title;
+                this.product_sku =  this.product.sku;
+                this.description =  this.product.description;
+
+
+                // if(this.product.productVariantList){
+                //     this.product_variant = [];
+
+                //     this.product.productVariantList.forEach(item => {
+                //         this.product_variant.push({
+                //             option: item.option,
+                //             tags: item.tags
+                //         })
+                //     });
+
+                // }
+            }
         }
 
 
     },
     mounted() {
-        console.log('Component mounted.')
+        this.getProductInfo();
+
     }
 }
 </script>

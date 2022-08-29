@@ -20,17 +20,30 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $products = Product::with(['productVariantPrice' => function($q) use($request){
-                    return $q->when(($request->price_from && $request->price_to), function($q) use($request) {
-                         $q->where('price','>=', $request->price_from)
-                        ->where('price','<=', $request->price_to);
+        $products = Product::with([
+            'productVariant' => function($q)  use($request){
+                 $q->where('variant', $request->get('variant'));
+            },
+            'productVariantPrice' => function($q) use($request){
+                    return $q->when(($request->get('price_from') && $request->get('price_to')), function($q) use($request) {
+                         $q->where('price','>=', $request->get('price_from'))
+                        ->where('price','<=', $request->get('price_to'));
                         });
-                    }])
+                    },
+                ])
                 ->applyFilter($request)
-                ->paginate(2);
+                ->latest()
+                ->paginate();
 
-        // return $vars = ProductVariant::select('id', 'variant')->groupBy('variant_id')->groupBy('product_id')->get();
-         $variants = Variant::all();
+          $variants = Variant::with('productVariant')
+         ->get()
+         ->map(function($item){
+            return (object) [
+                'id' => $item->id,
+                'title' => $item->title,
+                'variants' => collect($item->productVariant)->pluck('variant')->unique(),
+            ];
+         });
 
         return view('products.index', compact('products','variants'));
     }
@@ -55,14 +68,22 @@ class ProductController extends Controller
     public function store(Request $request)
     {
 
+
+
         try {
+            // $this->validate($request, [
+            //     'product_name' => 'required',
+            //     'product_sku' => 'required|unique:products.sku'
+            // ]);
+
             $product = new Product();
             $product->fill($request->all());
             $product->save();
 
+            //Product Variants
             if($request->get('product_variant'))
             {
-                $product_variants = collect($request->get('product_variant'))->map(function($prodVar) use( $product){
+                $product_variants = $product->product_variants =  collect($request->get('product_variant'))->map(function($prodVar) use( $product){
 
                     return collect($prodVar['tags'])->map(function($tag) use($prodVar, $product){
 
@@ -73,35 +94,31 @@ class ProductController extends Controller
                             'product_id' => $product->id,
                             ])->save();
                             return $pVar;
-                    });
+                    })->pluck('variant','id');
                 });
 
-                // return count($product_variants);
+                // return ($product_variants);
 
-                // if($request->get('product_variant_prices')){
+                if($request->get('product_variant_prices')){
 
-                //     $product_variant_prices = collect($request->get('product_variant_prices'))->map(function($prodVarPrice) use( $product, $product_variants){
+                    $product_variant_prices = $product->product_variant_prices =  collect($request->get('product_variant_prices'))->map(function($prodVarPrice) use( $product, $product_variants){
 
-                //         $titles = explode('/',$prodVarPrice['title']);
-                //         $title_ids = collect($titles)->map(function($title, $key) use($product_variants){
-                //             if($title) {
-                //                 $variant = collect($product_variants[$key])->where('variant', $title)->first();
-                //                 return $variant->id;
-                //             }
-                //         });
+                        $titles = explode('/',$prodVarPrice['title']);
+                        $product_variant_one = $this->getVariantIdByTitle($product_variants, $titles, 0 );
+                        $product_variant_two = $this->getVariantIdByTitle($product_variants, $titles, 1 );
+                        $product_variant_three = $this->getVariantIdByTitle($product_variants, $titles, 2 );
 
-                //         // $pVarPrice = new ProductVariantPrice();
-                //         // $pVarPrice->fill([
-                //         //     'product_variant_one' => $titles[0]??null,
-                //         //     'product_variant_two' => $titles[1]??null,
-                //         //     'product_variant_three' => $titles[2]??null,
-                //         //     'price' => $prodVarPrice['price'],
-                //         //     'stock' => $prodVarPrice['stock'],
-                //         //     'product_id' => $product->id
-                //         //     ])->save();
-                //     });
-                //     // return $product_variant_prices;
-                // }
+                        $pVarPrice = new ProductVariantPrice();
+                        $pVarPrice->fill([
+                            'product_variant_one' => $product_variant_one??null,
+                            'product_variant_two' => $product_variant_two??null,
+                            'product_variant_three' => $product_variant_three??null,
+                            'price' => $prodVarPrice['price'],
+                            'stock' => $prodVarPrice['stock'],
+                            'product_id' => $product->id
+                        ])->save();
+                    });
+                }
 
 
             }
@@ -118,6 +135,17 @@ class ProductController extends Controller
         }
 
 
+    }
+
+    //Search Variant id
+    public function getVariantIdByTitle($product_variants, $titles, $index )
+    {
+        if(isset($product_variants[$index]) && isset($titles[$index]))
+        {
+            return collect($product_variants[$index])->search($titles[$index]);
+        }else{
+            return null;
+        }
     }
 
 
@@ -141,7 +169,28 @@ class ProductController extends Controller
     public function edit(Product $product)
     {
         $variants = Variant::all();
-        return view('products.edit', compact('variants'));
+        $product->load('productVariant.variantType');
+        // return $product;
+
+        $productVariantList = $product->productVariantList = collect($product->productVariant)
+            ->groupBy('variantType.title')
+            ->map(function($item){
+
+               $tags = collect($item)->map(function($val){
+                    return [
+                        'id' => $val->id,
+                        'variant' => $val->variant
+                    ];
+                })->pluck('variant','id');
+
+                return [
+                    'option' => $item[0]->variantType->id,
+                    'tags' => $tags,
+                    'tagsWithID' => $tags,
+                ];
+
+            });
+        return view('products.edit', compact('product','productVariantList','variants'));
     }
 
     /**

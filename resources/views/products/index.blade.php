@@ -17,7 +17,12 @@
                     <select name="variant" id="" class="form-control">
                         <option value="">Select A Variant</option>
                         @foreach($variants as $variant)
-                            <option value="{{ $variant->id }}" disabled>{{ $variant->title }}</option>
+                            <optgroup label="{{ $variant->title }}">
+                                @forelse($variant->variants as $var)
+                                <option value="{{ $var }}" {{ request()->get('variant')==$var?'selected':'' }}>{{ $var }}</option>
+                                @empty
+                                @endforelse
+                            </optgroup>
                         @endforeach
                     </select>
                 </div>
@@ -64,7 +69,13 @@
 
                                     @forelse($product->productVariantPrice as $price)
                                     <dt class="col-sm-3 pb-0">
-                                        {{ $price->product_variant_one }}/ {{ $price->product_variant_two }} / {{ $price->product_variant_three }}
+                                        @php
+
+                                        $variants = ($price->product_variant_one ? $price->productVariant->variant??null:'').
+                                            ($price->product_variant_two ? '/'.$price->productVariantTwo->variant??null:'').
+                                            ($price->product_variant_three ? '/'.$price->productVariantThree->variant??null:'')
+                                        @endphp
+                                        {{  $variants }}
                                     </dt>
                                     <dd class="col-sm-9">
                                         <dl class="row mb-0">

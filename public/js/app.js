@@ -2024,10 +2024,19 @@ __webpack_require__.r(__webpack_exports__);
     variants: {
       type: Array,
       required: true
+    },
+    product: {
+      type: Object,
+      required: false
+    },
+    productVariantList: {
+      type: Object,
+      required: false
     }
   },
   data: function data() {
     return {
+      id: '',
       product_name: '',
       product_sku: '',
       description: '',
@@ -2109,15 +2118,33 @@ __webpack_require__.r(__webpack_exports__);
         product_variant_prices: this.product_variant_prices
       };
       axios.post('/product', product).then(function (response) {
-        console.log(response.data);
+        if (response.data.status == 200) {
+          console.log('success');
+          window.location.href = "/product";
+        }
       })["catch"](function (error) {
         console.log(error);
       });
-      console.log(product);
+    },
+    getProductInfo: function getProductInfo() {
+      if (this.product) {
+        var product = this.product;
+        this.product_name = this.product.title;
+        this.product_sku = this.product.sku;
+        this.description = this.product.description; // if(this.product.productVariantList){
+        //     this.product_variant = [];
+        //     this.product.productVariantList.forEach(item => {
+        //         this.product_variant.push({
+        //             option: item.option,
+        //             tags: item.tags
+        //         })
+        //     });
+        // }
+      }
     }
   },
   mounted: function mounted() {
-    console.log('Component mounted.');
+    this.getProductInfo();
   }
 });
 
