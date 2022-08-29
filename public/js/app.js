@@ -2105,39 +2105,62 @@ __webpack_require__.r(__webpack_exports__);
     },
     // store product into database
     saveProduct: function saveProduct() {
-      var product = {
-        title: this.product_name,
-        sku: this.product_sku,
-        description: this.description,
-        product_image: this.images,
-        product_variant: this.product_variant,
-        product_variant_prices: this.product_variant_prices
-      };
-      axios.post('/product', product).then(function (response) {
-        if (response.data.status == 200) {
-          console.log('success');
-          window.location.href = "/product";
-        }
-      })["catch"](function (error) {
-        console.log(error);
-      });
-    },
-    getProductInfo: function getProductInfo() {
       var _this2 = this;
 
       if (this.product) {
-        var product = this.product;
+        //Update
+        var product = {
+          title: this.product_name,
+          sku: this.product_sku,
+          description: this.description,
+          product_image: this.images,
+          product_variant: this.product_variant,
+          product_variant_prices: this.product_variant_prices
+        };
+        axios.put("/product/".concat(this.product.id), product).then(function (response) {
+          if (response.data.status == 200) {
+            console.log('success');
+            window.location.href = "/product/".concat(_this2.product.id, "/edit");
+          }
+        })["catch"](function (error) {
+          console.log(error);
+        });
+      } else {
+        //Create
+        var _product = {
+          title: this.product_name,
+          sku: this.product_sku,
+          description: this.description,
+          product_image: this.images,
+          product_variant: this.product_variant,
+          product_variant_prices: this.product_variant_prices
+        };
+        axios.post('/product', _product).then(function (response) {
+          if (response.data.status == 200) {
+            console.log('success');
+            window.location.href = "/product";
+          }
+        })["catch"](function (error) {
+          console.log(error);
+        });
+      }
+    },
+    getProductInfo: function getProductInfo() {
+      var _this3 = this;
+
+      if (this.product) {
+        this.id = this.product.id;
         this.product_name = this.product.title;
         this.product_sku = this.product.sku;
         this.description = this.product.description;
         this.product_variant = [];
         this.product.variants.map(function (item) {
-          _this2.product_variant.push({
+          _this3.product_variant.push({
             option: item.option,
             tags: item.tags
           });
         });
-        this.checkVariant();
+        this.product_variant_prices = this.product.variantPrices;
       }
     }
   },

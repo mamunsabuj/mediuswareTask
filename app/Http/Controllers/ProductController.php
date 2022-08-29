@@ -68,8 +68,6 @@ class ProductController extends Controller
     public function store(Request $request)
     {
 
-
-
         try {
 
             $product = new Product();
@@ -174,6 +172,22 @@ class ProductController extends Controller
                 ];
             })->values();
 
+        $product->variantPrices = collect($product->productVariantPrice)->map(function($item){
+
+           $titles = [
+                $item->productVariant->variant??null,
+                $item->productVariantTwo->variant??null,
+                $item->productVariantThree->variant??null
+            ];
+
+            return [
+                'id' => $item->id,
+                'price' => $item->price,
+                'stock' => $item->stock,
+                'title' => collect($titles)->filter()->implode('/')
+            ];
+        });
+
         return view('products.edit', compact('product',  'variants'));
     }
 
@@ -186,7 +200,63 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-        //
+        try {
+
+            $product->fill($request->all());
+            $product->save();
+
+            //Product Variants
+            if($request->get('product_variant'))
+            {
+                $product->productVariant()->delete();
+                $product_variants = $product->product_variants =  collect($request->get('product_variant'))->map(function($prodVar) use( $product){
+
+                    return collect($prodVar['tags'])->map(function($tag) use($prodVar, $product){
+
+                        $pVar = new ProductVariant();
+                        $pVar->fill([
+                            'variant' => $tag,
+                            'variant_id' => $prodVar['option'],
+                            'product_id' => $product->id,
+                            ])->save();
+                            return $pVar;
+                    })->pluck('variant','id');
+                });
+
+
+                if($request->get('product_variant_prices')){
+
+                    $product->ProductVariantPrice()->delete();
+                    $product_variant_prices = $product->product_variant_prices =  collect($request->get('product_variant_prices'))->map(function($prodVarPrice) use( $product, $product_variants){
+
+                        $titles = explode('/',$prodVarPrice['title']);
+                        $product_variant_one = $this->getVariantIdByTitle($product_variants, $titles, 0 );
+                        $product_variant_two = $this->getVariantIdByTitle($product_variants, $titles, 1 );
+                        $product_variant_three = $this->getVariantIdByTitle($product_variants, $titles, 2 );
+
+                        $pVarPrice = new ProductVariantPrice();
+                        $pVarPrice->fill([
+                            'product_variant_one' => $product_variant_one??null,
+                            'product_variant_two' => $product_variant_two??null,
+                            'product_variant_three' => $product_variant_three??null,
+                            'price' => $prodVarPrice['price'],
+                            'stock' => $prodVarPrice['stock'],
+                            'product_id' => $product->id
+                        ])->save();
+                    });
+                }
+
+            }
+
+            $response = [
+                'message' => $product,
+                'status' => Response::HTTP_OK
+            ];
+
+            return response()->json($response, Response::HTTP_OK);
+        } catch (Exception $exception) {
+            return response()->json($exception->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**

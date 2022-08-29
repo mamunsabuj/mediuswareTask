@@ -111,10 +111,10 @@ export default {
             type: Array,
             required: true
         },
-        product:{
-            type: Object,
-            required: false
-        },
+    product:{
+        type: Object,
+        required: false
+    },
 
     },
     data() {
@@ -187,30 +187,54 @@ export default {
         // store product into database
         saveProduct() {
 
+            if(this.product){ //Update
 
-            let product = {
-                title: this.product_name,
-                sku: this.product_sku,
-                description: this.description,
-                product_image: this.images,
-                product_variant: this.product_variant,
-                product_variant_prices: this.product_variant_prices
-            }
-
-            axios.post('/product', product).then(response => {
-                if(response.data.status == 200){
-                    console.log('success');
-                    window.location.href="/product";
+                let product = {
+                    title: this.product_name,
+                    sku: this.product_sku,
+                    description: this.description,
+                    product_image: this.images,
+                    product_variant: this.product_variant,
+                    product_variant_prices: this.product_variant_prices
                 }
-            }).catch(error => {
-                console.log(error);
-            })
+
+                axios.put(`/product/${this.product.id}`, product).then(response => {
+                    if(response.data.status == 200){
+                        console.log('success');
+                        window.location.href=`/product/${this.product.id}/edit`;
+                    }
+                }).catch(error => {
+                    console.log(error);
+                })
+
+
+            }else{ //Create
+
+                 let product = {
+                    title: this.product_name,
+                    sku: this.product_sku,
+                    description: this.description,
+                    product_image: this.images,
+                    product_variant: this.product_variant,
+                    product_variant_prices: this.product_variant_prices
+                }
+
+                axios.post('/product', product).then(response => {
+                    if(response.data.status == 200){
+                        console.log('success');
+                        window.location.href="/product";
+                    }
+                }).catch(error => {
+                    console.log(error);
+                })
+
+            }
 
         },
 
         getProductInfo(){
             if(this.product){
-                let product = this.product;
+                this.id =  this.product.id;
                 this.product_name =  this.product.title;
                 this.product_sku =  this.product.sku;
                 this.description =  this.product.description;
@@ -223,7 +247,8 @@ export default {
                     })
                 });
 
-                this.checkVariant();
+                this.product_variant_prices = this.product.variantPrices;
+
             }
         }
 
